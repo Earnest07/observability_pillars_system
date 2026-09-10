@@ -1,0 +1,131 @@
+
+services:
+
+  prometheus:
+    image: prom/prometheus:latest
+
+    container_name: infra-prometheus
+
+    ports:
+      - "9090:9090"
+
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - /mnt/e/observability/data/prometheus:/prometheus
+
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+
+    restart: unless-stopped
+
+
+  grafana:
+    image: grafana/grafana:latest
+
+    container_name: infra-grafana
+
+    ports:
+      - "3000:3000"
+
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+
+      GF_SMTP_ENABLED: "${GF_SMTP_ENABLED:-false}"
+      GF_SMTP_HOST: "${GF_SMTP_HOST:-smtp.gmail.com:587}"
+      GF_SMTP_USER: "${GF_SMTP_USER:-}"
+      GF_SMTP_PASSWORD: "${GF_SMTP_PASSWORD:-}"
+      GF_SMTP_FROM_ADDRESS: "${GF_SMTP_FROM_ADDRESS:-}"
+      GF_SMTP_FROM_NAME: "${GF_SMTP_FROM_NAME:-Infrastructure Monitoring}"
+
+    volumes:
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - /mnt/e/observability/data/grafana:/var/lib/grafana
+
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+
+    restart: unless-stopped
+
+
+  loki:
+    image: grafana/loki:latest
+
+    container_name: infra-loki
+
+    ports:
+      - "3100:3100"
+
+    volumes:
+      - ./loki/loki.yml:/etc/loki/loki.yml:ro
+      - /mnt/e/observability/data/loki:/loki
+
+    command:
+      - "-config.file=/etc/loki/loki.yml"
+
+    restart: unless-stopped
+
+
+  tempo:
+    image: grafana/tempo:latest
+
+    container_name: infra-tempo
+
+    ports:
+      - "3200:3200"
+
+    volumes:
+      - ./tempo/tempo.yml:/etc/tempo/tempo.yml:ro
+      - /mnt/e/observability/data/tempo:/var/tempo
+
+    command:
+      - "-config.file=/etc/tempo/tempo.yml"
+
+    restart: unless-stopped
+
+
+  alloy:
+    image: grafana/alloy:latest
+
+    container_name: infra-alloy
+
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+
+    volumes:
+      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - /mnt/e/observability/data/alloy:/var/lib/alloy
+
+    command:
+      - "run"
+      - "/etc/alloy/config.alloy"
+      - "--storage.path=/var/lib/alloy/data"
+
+    depends_on:
+      - tempo
+
+    restart: unless-stopped
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    
+    container_name: infra-alertmanager
+
+    ports:
+      - "9093:9093"
+
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - /mnt/e/observability/data/alertmanager:/alertmanager
+
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+
+    restart: unless-stopped

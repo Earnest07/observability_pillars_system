@@ -1,0 +1,18 @@
+---
+groups:
+
+  - name: application-alerts
+
+    rules:
+
+      - alert: ApplicationDown
+        expr: up{job="flask-application"} == 0
+        for: 30s
+
+        labels:
+          severity: critical
+          service: flask
+
+        annotations:
+          summary: "Flask application is down"
+          description: "The Flask application target {{ $labels.instance }} has been unreachable for more than 30 seconds."

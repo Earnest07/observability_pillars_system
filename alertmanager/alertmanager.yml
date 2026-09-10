@@ -1,0 +1,43 @@
+global:
+  resolve_timeout: 5m
+
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'earnestebenezer07@gmail.com'
+  smtp_auth_username: 'earnestebenezer07@gmail.com'
+  smtp_auth_password: 'boujhipvwatvelcx'
+  smtp_require_tls: true
+
+
+route:
+  group_by:
+    - alertname
+    - service
+
+  group_wait: 10s
+  group_interval: 5m
+  repeat_interval: 1h
+
+  receiver: gmail-alerts
+
+
+receivers:
+
+  - name: gmail-alerts
+
+    email_configs:
+
+      - to: 'earnestebenezer07@gmail.com'
+        send_resolved: true
+
+        headers:
+          Subject: "[{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}"
+
+        html: |
+          <h2>Infrastructure Alert</h2>
+
+          <p><b>Alert:</b> {{ .CommonLabels.alertname }}</p>
+          <p><b>Application:</b> {{ .CommonLabels.application }}</p>
+          <p><b>Service:</b> {{ .CommonLabels.service }}</p>
+          <p><b>Instance:</b> {{ .CommonLabels.instance }}</p>
+          <p><b>Severity:</b> {{ .CommonLabels.severity }}</p>
+          <p><b>Status:</b> {{ .Status }}</p>
