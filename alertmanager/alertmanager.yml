@@ -17,12 +17,12 @@ route:
   group_interval: 5m
   repeat_interval: 1h
 
-  receiver: gmail-alerts
+  receiver: combined-alerts
 
 
 receivers:
 
-  - name: gmail-alerts
+  - name: combined-alerts
 
     email_configs:
 
@@ -41,3 +41,9 @@ receivers:
           <p><b>Instance:</b> {{ .CommonLabels.instance }}</p>
           <p><b>Severity:</b> {{ .CommonLabels.severity }}</p>
           <p><b>Status:</b> {{ .Status }}</p>
+
+
+    webhook_configs:
+
+      - url: "http://automation:5000/alert"
+        send_resolved: true

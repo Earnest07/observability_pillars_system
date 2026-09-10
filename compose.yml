@@ -129,3 +129,15 @@ services:
       - "--storage.path=/alertmanager"
 
     restart: unless-stopped
+
+  
+  automation:
+    build:
+      context: ./automation
+
+    container_name: infra-automation
+
+    ports:
+      - "5000:5000"
+
+    restart: unless-stopped
