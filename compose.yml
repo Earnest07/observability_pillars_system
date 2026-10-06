@@ -2,6 +2,7 @@
 services:
 
   prometheus:
+
     image: prom/prometheus:latest
 
     container_name: infra-prometheus
@@ -9,9 +10,16 @@ services:
     ports:
       - "9090:9090"
 
+    environment:
+      AWS_SHARED_CREDENTIALS_FILE: /etc/prometheus/aws/credentials
+
     volumes:
+
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+
+      - ./prometheus/aws:/etc/prometheus/aws:ro
+
       - /mnt/e/observability/data/prometheus:/prometheus
 
     command:
@@ -130,7 +138,7 @@ services:
 
     restart: unless-stopped
 
-  
+
   automation:
     build:
       context: ./automation
@@ -142,5 +150,12 @@ services:
 
     env_file:
       - .env
+
+    environment:
+
+      # AWS controller credentials
+      AWS_ACCESS_KEY_ID: ${CONTROLLER_AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${CONTROLLER_AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${CONTROLLER_AWS_REGION}
 
     restart: unless-stopped

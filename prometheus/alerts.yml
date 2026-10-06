@@ -5,14 +5,40 @@ groups:
 
     rules:
 
-      - alert: ApplicationDown
-        expr: up{job="flask-application"} == 0
-        for: 30s
+      # - alert: ApplicationDown
+      #   expr: up{job="flask-application"} == 0
+      #   for: 30s
+
+      #   labels:
+      #     severity: critical
+      #     service: flask
+
+      #   annotations:
+      #     summary: "Flask application is down"
+      #     description: "The Flask application target {{ $labels.instance }} has been unreachable for more than 30 seconds."
+
+      - alert: HighCPU
+        expr: avg(application_cpu_usage_percent) > 30
+        for: 1m
 
         labels:
-          severity: critical
+          severity: warning
           service: flask
+          scaling_action: scale_out
 
         annotations:
-          summary: "Flask application is down"
-          description: "The Flask application target {{ $labels.instance }} has been unreachable for more than 30 seconds."
+          summary: "Application CPU is high"
+          description: "Application CPU has remained above 30% for 1 minute."
+
+      - alert: LowCPU
+        expr: application_cpu_usage_percent < 30
+        for: 1m
+
+        labels:
+          severity: info
+          service: flask
+          scaling_action: scale_in
+
+        annotations:
+          summary: "Application CPU is low"
+          description: "Application CPU has remained below 30% for 10 minutes."

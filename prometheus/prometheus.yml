@@ -1,29 +1,51 @@
----
 global:
-  scrape_interval: 5s
-  evaluation_interval: 5s
+  scrape_interval: 15s
+
 
 alerting:
   alertmanagers:
     - static_configs:
         - targets:
-            - "alertmanager:9093"
+            - infra-alertmanager:9093
+
 
 rule_files:
   - /etc/prometheus/alerts.yml
 
+
 scrape_configs:
 
-  - job_name: "flask-application"
+  - job_name: "application-servers"
 
-    metrics_path: /metrics
+    ec2_sd_configs:
 
-    static_configs:
+      - region: ap-south-1
+        port: 8000
 
-      - targets:
-          - "13.203.194.176:8000"
 
-        labels:
-          environment: "aws"
-          application: "observability-app"
-          service: "flask"
+    relabel_configs:
+
+      # Only instances having Role=application
+      - source_labels:
+          - __meta_ec2_tag_Role
+        regex: application
+        action: keep
+
+
+      # Add instance private IP as label
+      - source_labels:
+          - __meta_ec2_public_ip
+        regex: (.+)
+        target_label: __address__
+        replacement: $1:8000
+
+
+      # Add EC2 Name tag
+      - source_labels:
+          - __meta_ec2_tag_Name
+        target_label: name
+
+
+      - source_labels:
+        - __meta_ec2_instance_id
+        target_label: instance_id
